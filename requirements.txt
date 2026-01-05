@@ -1,0 +1,20 @@
+# RFID Reader Application - Modern Python GUI
+# Python 3.10+ required
+
+# GUI Framework
+PyQt6>=6.6.0
+PyQt6-Qt6>=6.6.0
+PyQt6-sip>=13.6.0
+
+# Fluent Design Widgets for Windows 11 aesthetic
+pyqt6-fluent-widgets>=1.5.0
+
+# Serial Communication
+pyserial>=3.5
+
+# Excel Export
+openpyxl>=3.1.2
+
+# Data Processing
+numpy>=1.24.0
+
