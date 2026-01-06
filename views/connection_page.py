@@ -10,10 +10,10 @@ CROSS-PLATFORM SUPPORT:
 
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
-    QFrame, QSpacerItem, QSizePolicy
+    QFrame, QSpacerItem, QSizePolicy, QLabel
 )
 from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtGui import QFont
+from PyQt6.QtGui import QFont, QPixmap
 import sys
 import os
 
@@ -266,16 +266,63 @@ class ConnectionPage(QWidget):
         layout.setSpacing(20)
         layout.setContentsMargins(36, 20, 36, 20)
         
-        # Page title
+        # Page title with logo in header
+        header_layout = QHBoxLayout()
+        
+        # Left side: Title and subtitle container
+        title_container = QVBoxLayout()
+        title_container.setSpacing(4)
+        
         title = StrongBodyLabel("Connection Settings", self)
         title.setFont(QFont("Segoe UI", 24, QFont.Weight.DemiBold))
-        layout.addWidget(title)
+        title_container.addWidget(title)
         
         subtitle = CaptionLabel("Configure serial port connections for RFID reader and sensors", self)
         subtitle.setStyleSheet("color: #666;")
-        layout.addWidget(subtitle)
+        title_container.addWidget(subtitle)
         
-        layout.addSpacing(10)
+        # Add title container to header
+        header_layout.addLayout(title_container)
+        
+        # Center stretch to push logo to the right
+        header_layout.addStretch()
+        
+        # Right side: Logo
+        logo_label = QLabel(self)
+        logo_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'logo-nextwaves.png')
+        
+        if os.path.exists(logo_path):
+            # Load image at high quality
+            pixmap = QPixmap(logo_path)
+            
+            # Set device pixel ratio for high DPI displays
+            device_ratio = self.devicePixelRatioF()
+            pixmap.setDevicePixelRatio(device_ratio)
+            
+            # Scale logo to 100px height for balanced visibility
+            scaled_pixmap = pixmap.scaledToHeight(
+                int(100 * device_ratio),
+                Qt.TransformationMode.SmoothTransformation
+            )
+            scaled_pixmap.setDevicePixelRatio(device_ratio)
+            
+            logo_label.setPixmap(scaled_pixmap)
+            logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter)
+            logo_label.setFixedHeight(108)
+            logo_label.setFixedWidth(173)
+            logo_label.setScaledContents(True)
+            logo_label.setStyleSheet("""
+                QLabel {
+                    background-color: transparent;
+                    padding: 8px;
+                    border-radius: 6px;
+                }
+            """)
+        
+        header_layout.addWidget(logo_label)
+        header_layout.setContentsMargins(0, 0, 0, 15)
+        
+        layout.addLayout(header_layout)
         
         # Connection cards in horizontal layout
         cards_layout = QHBoxLayout()

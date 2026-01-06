@@ -331,7 +331,7 @@ class InventoryPage(QWidget):
         inv_layout.setContentsMargins(12, 12, 12, 12)
         inv_layout.setSpacing(8)
         
-        inv_title = StrongBodyLabel("📋 Inventory List", self)
+        inv_title = StrongBodyLabel("Inventory List", self)
         inv_layout.addWidget(inv_title)
         
         self.inventory_table = TagTableWidget(self)
@@ -352,7 +352,7 @@ class InventoryPage(QWidget):
         det_layout.setContentsMargins(12, 12, 12, 12)
         det_layout.setSpacing(8)
         
-        det_title = StrongBodyLabel("🎯 Detected Tags (Coming)", self)
+        det_title = StrongBodyLabel("Detected Tags (Coming)", self)
         det_layout.addWidget(det_title)
         
         self.detected_table = TagTableWidget(self)

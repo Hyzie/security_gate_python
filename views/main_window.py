@@ -3,12 +3,13 @@ Main Window - Windows 11 Fluent Design
 Modern RFID Reader Application Interface
 """
 
+import os
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, 
-    QStackedWidget, QFrame, QSplitter, QSizePolicy
+    QStackedWidget, QFrame, QSplitter, QSizePolicy, QLabel
 )
 from PyQt6.QtCore import Qt, QSize, pyqtSignal
-from PyQt6.QtGui import QIcon, QFont
+from PyQt6.QtGui import QIcon, QFont, QPixmap
 
 from qfluentwidgets import (
     FluentWindow, NavigationInterface, NavigationItemPosition,
@@ -37,10 +38,18 @@ class MainWindow(FluentWindow):
     def __init__(self):
         super().__init__()
         
+        # Get the application root directory
+        app_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        logo_path = os.path.join(app_root, 'logo-nextwaves.png')
+        
         # Window setup
         self.setWindowTitle("RFID Reader - Modern Interface")
         self.resize(1280, 800)
         self.setMinimumSize(1024, 700)
+        
+        # Set window icon from logo
+        if os.path.exists(logo_path):
+            self.setWindowIcon(QIcon(logo_path))
         
         # Set theme
         setTheme(Theme.LIGHT)
