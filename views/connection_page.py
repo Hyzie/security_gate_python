@@ -24,6 +24,9 @@ from qfluentwidgets import (
     FluentIcon as FIF, ProgressRing, IndeterminateProgressRing
 )
 
+# Import responsive UI configuration
+from utils.ui_config import get_ui_config
+
 # Platform detection
 IS_LINUX = sys.platform.startswith('linux')
 IS_RASPBERRY_PI = IS_LINUX and os.path.exists('/proc/device-tree/model')
@@ -39,19 +42,26 @@ class ConnectionCard(CardWidget):
         super().__init__(parent)
         self._title = title
         self._is_connected = False
+        self.ui_config = get_ui_config()
         self._setup_ui()
     
     def _setup_ui(self):
         """Setup the card UI"""
         layout = QVBoxLayout(self)
-        layout.setSpacing(16)
-        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(self.ui_config.layout_spacing)
+        layout.setContentsMargins(
+            self.ui_config.card_margin,
+            self.ui_config.card_margin,
+            self.ui_config.card_margin,
+            self.ui_config.card_margin
+        )
         
         # Title with icon
         title_layout = QHBoxLayout()
         icon = IconWidget(FIF.CONNECT, self)
-        icon.setFixedSize(24, 24)
+        icon.setFixedSize(self.ui_config.icon_title, self.ui_config.icon_title)
         title_label = StrongBodyLabel(self._title, self)
+        title_label.setFont(QFont("Segoe UI", self.ui_config.font_card_title, QFont.Weight.DemiBold))
         title_layout.addWidget(icon)
         title_layout.addWidget(title_label)
         title_layout.addStretch()
@@ -65,14 +75,16 @@ class ConnectionCard(CardWidget):
         
         # Form grid
         form_layout = QGridLayout()
-        form_layout.setSpacing(12)
+        form_layout.setSpacing(self.ui_config.layout_spacing)
         
         # Serial Port - Cross-platform label
         # Windows shows "COM Port", Linux shows "Serial Port"
         port_label_text = "Serial Port:" if IS_LINUX else "COM Port:"
         port_label = BodyLabel(port_label_text, self)
+        port_label.setFont(QFont("Segoe UI", self.ui_config.font_body))
         self.port_combo = ComboBox(self)
-        self.port_combo.setMinimumWidth(200)
+        self.port_combo.setMinimumWidth(150 if self.ui_config.profile == 'small' else 200)
+        self.port_combo.setFixedHeight(self.ui_config.input_row_height)
         
         # Platform-specific placeholder
         if IS_LINUX:
@@ -88,8 +100,10 @@ class ConnectionCard(CardWidget):
         
         # Baud Rate
         baud_label = BodyLabel("Baud Rate:", self)
+        baud_label.setFont(QFont("Segoe UI", self.ui_config.font_body))
         self.baud_combo = ComboBox(self)
-        self.baud_combo.setMinimumWidth(200)
+        self.baud_combo.setMinimumWidth(150 if self.ui_config.profile == 'small' else 200)
+        self.baud_combo.setFixedHeight(self.ui_config.input_row_height)
         self.baud_combo.addItems(['9600', '19200', '38400', '57600', '115200', '230400'])
         self.baud_combo.setCurrentIndex(4)  # Default 115200 (matches C#)
         
@@ -104,12 +118,16 @@ class ConnectionCard(CardWidget):
         
         # Buttons
         btn_layout = QHBoxLayout()
-        btn_layout.setSpacing(12)
+        btn_layout.setSpacing(self.ui_config.layout_spacing)
         
         self.refresh_btn = PushButton("Refresh Ports", self, FIF.SYNC)
         self.connect_btn = PrimaryPushButton("Connect", self, FIF.LINK)
         self.disconnect_btn = PushButton("Disconnect", self, FIF.CANCEL)
         self.disconnect_btn.setEnabled(False)
+        
+        # Set responsive button heights
+        for btn in [self.refresh_btn, self.connect_btn, self.disconnect_btn]:
+            btn.setFixedHeight(self.ui_config.button_height)
         
         btn_layout.addWidget(self.refresh_btn)
         btn_layout.addStretch()
@@ -184,19 +202,26 @@ class LogCard(CardWidget):
     
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.ui_config = get_ui_config()
         self._setup_ui()
     
     def _setup_ui(self):
         """Setup log card UI"""
         layout = QVBoxLayout(self)
-        layout.setSpacing(12)
-        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(self.ui_config.layout_spacing)
+        layout.setContentsMargins(
+            self.ui_config.card_margin,
+            self.ui_config.card_margin,
+            self.ui_config.card_margin,
+            self.ui_config.card_margin
+        )
         
         # Title
         title_layout = QHBoxLayout()
         icon = IconWidget(FIF.HISTORY, self)
-        icon.setFixedSize(24, 24)
+        icon.setFixedSize(self.ui_config.icon_title, self.ui_config.icon_title)
         title = StrongBodyLabel("Operation Log", self)
+        title.setFont(QFont("Segoe UI", self.ui_config.font_card_title, QFont.Weight.DemiBold))
         
         self.clear_btn = PushButton("Clear", self, FIF.DELETE)
         self.clear_btn.setFixedWidth(80)
@@ -211,16 +236,18 @@ class LogCard(CardWidget):
         # Log text area
         self.log_text = TextEdit(self)
         self.log_text.setReadOnly(True)
-        self.log_text.setMinimumHeight(200)
-        self.log_text.setStyleSheet("""
-            TextEdit {
+        min_height = 150 if self.ui_config.profile == 'small' else 200
+        self.log_text.setMinimumHeight(min_height)
+        log_font_size = self.ui_config.font_body + 1
+        self.log_text.setStyleSheet(f"""
+            TextEdit {{
                 font-family: 'Cascadia Code', 'Consolas', monospace;
-                font-size: 12px;
+                font-size: {log_font_size}px;
                 background-color: #1E1E1E;
                 color: #D4D4D4;
                 border-radius: 8px;
                 padding: 12px;
-            }
+            }}
         """)
         
         layout.addWidget(self.log_text)
@@ -257,28 +284,35 @@ class ConnectionPage(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setObjectName("connectionPage")
+        self.ui_config = get_ui_config()
         self._setup_ui()
         self.refresh_ports()
     
     def _setup_ui(self):
         """Setup the page UI"""
         layout = QVBoxLayout(self)
-        layout.setSpacing(20)
-        layout.setContentsMargins(36, 20, 36, 20)
+        layout.setSpacing(self.ui_config.card_spacing)
+        layout.setContentsMargins(
+            self.ui_config.page_margin_h,
+            self.ui_config.page_margin_v,
+            self.ui_config.page_margin_h,
+            self.ui_config.page_margin_v
+        )
         
         # Page title with logo in header
         header_layout = QHBoxLayout()
         
         # Left side: Title and subtitle container
         title_container = QVBoxLayout()
-        title_container.setSpacing(4)
+        title_container.setSpacing(2)
         
         title = StrongBodyLabel("Connection Settings", self)
-        title.setFont(QFont("Segoe UI", 24, QFont.Weight.DemiBold))
+        title.setFont(QFont("Segoe UI", self.ui_config.font_page_title, QFont.Weight.DemiBold))
         title_container.addWidget(title)
         
         subtitle = CaptionLabel("Configure serial port connections for RFID reader and sensors", self)
         subtitle.setStyleSheet("color: #666;")
+        subtitle.setFont(QFont("Segoe UI", self.ui_config.font_caption))
         title_container.addWidget(subtitle)
         
         # Add title container to header
@@ -287,46 +321,46 @@ class ConnectionPage(QWidget):
         # Center stretch to push logo to the right
         header_layout.addStretch()
         
-        # Right side: Logo
-        logo_label = QLabel(self)
-        logo_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'logo-nextwaves.png')
+        # Right side: Logo (hide on small screens to save space)
+        if self.ui_config.show_logo_in_header:
+            logo_label = QLabel(self)
+            logo_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'logo-nextwaves.png')
+            
+            if os.path.exists(logo_path):
+                # Load image at high quality
+                pixmap = QPixmap(logo_path)
+                
+                # Set device pixel ratio for high DPI displays
+                device_ratio = self.devicePixelRatioF()
+                pixmap.setDevicePixelRatio(device_ratio)
+                
+                # Scale logo with responsive height
+                scaled_pixmap = pixmap.scaledToHeight(
+                    int(self.ui_config.logo_height * device_ratio),
+                    Qt.TransformationMode.SmoothTransformation
+                )
+                scaled_pixmap.setDevicePixelRatio(device_ratio)
+                
+                logo_label.setPixmap(scaled_pixmap)
+                logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter)
+                logo_label.setScaledContents(True)
+                logo_label.setStyleSheet("""
+                    QLabel {
+                        background-color: transparent;
+                        padding: 8px;
+                        border-radius: 6px;
+                    }
+                """)
+            
+            header_layout.addWidget(logo_label)
         
-        if os.path.exists(logo_path):
-            # Load image at high quality
-            pixmap = QPixmap(logo_path)
-            
-            # Set device pixel ratio for high DPI displays
-            device_ratio = self.devicePixelRatioF()
-            pixmap.setDevicePixelRatio(device_ratio)
-            
-            # Scale logo to 100px height for balanced visibility
-            scaled_pixmap = pixmap.scaledToHeight(
-                int(100 * device_ratio),
-                Qt.TransformationMode.SmoothTransformation
-            )
-            scaled_pixmap.setDevicePixelRatio(device_ratio)
-            
-            logo_label.setPixmap(scaled_pixmap)
-            logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter)
-            logo_label.setFixedHeight(108)
-            logo_label.setFixedWidth(173)
-            logo_label.setScaledContents(True)
-            logo_label.setStyleSheet("""
-                QLabel {
-                    background-color: transparent;
-                    padding: 8px;
-                    border-radius: 6px;
-                }
-            """)
-        
-        header_layout.addWidget(logo_label)
-        header_layout.setContentsMargins(0, 0, 0, 15)
+        header_layout.setContentsMargins(0, 0, 0, self.ui_config.layout_spacing)
         
         layout.addLayout(header_layout)
         
         # Connection cards in horizontal layout
         cards_layout = QHBoxLayout()
-        cards_layout.setSpacing(20)
+        cards_layout.setSpacing(self.ui_config.card_spacing)
         
         # Reader connection card
         self.reader_card = ConnectionCard("RFID Reader Connection", self)

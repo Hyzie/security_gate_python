@@ -56,7 +56,7 @@ def setup_fonts():
 
 
 def main():
-    """Application entry point"""
+    """Application entry point with Raspberry Pi optimization"""
     # Create application
     app = QApplication(sys.argv)
     app.setApplicationName("RFID Reader")
@@ -72,6 +72,10 @@ def main():
     # Import here to avoid circular imports
     from views import MainWindow
     from controllers import ReaderController
+    from utils.ui_config import get_ui_config, is_raspberry_pi
+    
+    # Get responsive UI configuration
+    ui_config = get_ui_config()
     
     # Create main window
     window = MainWindow()
@@ -82,8 +86,26 @@ def main():
     # Handle application quit
     app.aboutToQuit.connect(controller.cleanup)
     
-    # Show window maximized (fullscreen with taskbar visible)
-    window.showMaximized()
+    # RASPBERRY PI OPTIMIZATION:
+    # - Automatically go fullscreen on small screens (1024x600)
+    # - Show window normally on larger screens
+    if ui_config.profile == 'small' or is_raspberry_pi():
+        window.showFullScreen()
+        print(f"✓ Running in fullscreen mode")
+        print(f"  Screen: {ui_config.screen_width}x{ui_config.screen_height}")
+        print(f"  Profile: {ui_config.profile}")
+        print(f"  Raspberry Pi: {is_raspberry_pi()}")
+        
+        # Disable animations on Pi for better performance
+        if is_raspberry_pi():
+            app.setEffectEnabled(Qt.UIEffect.AnimateCombo, False)
+            app.setEffectEnabled(Qt.UIEffect.AnimateTooltip, False)
+            print(f"  Animations: Disabled (Pi optimization)")
+    else:
+        window.show()
+        print(f"✓ Running in windowed mode")
+        print(f"  Screen: {ui_config.screen_width}x{ui_config.screen_height}")
+        print(f"  Profile: {ui_config.profile}")
     
     # Start event loop
     sys.exit(app.exec())

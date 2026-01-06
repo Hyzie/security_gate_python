@@ -1,6 +1,7 @@
 """
 Settings Page - Reader Configuration
 Clean, Touch-Friendly UI for RFID Reader Settings
+REFACTORED FOR 1024x600 RESPONSIVE DESIGN
 """
 
 from PyQt6.QtWidgets import (
@@ -16,6 +17,9 @@ from qfluentwidgets import (
     SpinBox, IconWidget, SwitchButton, FluentIcon as FIF,
     SmoothScrollArea
 )
+
+# Import responsive UI configuration
+from utils.ui_config import get_ui_config
 
 
 # ============================================================

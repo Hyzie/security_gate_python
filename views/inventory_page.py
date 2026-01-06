@@ -19,23 +19,29 @@ from qfluentwidgets import (
     FluentIcon as FIF, ProgressRing, TransparentPushButton
 )
 
+# Import responsive UI configuration
+from utils.ui_config import get_ui_config
+
 
 class StatsCard(CardWidget):
     """Statistics display card - Compact inline version"""
     
     def __init__(self, title: str, icon: FIF, parent=None):
         super().__init__(parent)
+        self.ui_config = get_ui_config()
         self._setup_ui(title, icon)
     
     def _setup_ui(self, title: str, icon: FIF):
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(12, 8, 12, 8)
-        layout.setSpacing(10)
+        margin = self.ui_config.card_margin - 4  # Slightly less for cards
+        layout.setContentsMargins(margin, margin // 2, margin, margin // 2)
+        layout.setSpacing(8)
         layout.setAlignment(Qt.AlignmentFlag.AlignVCenter)
         
         # Icon
         icon_widget = IconWidget(icon, self)
-        icon_widget.setFixedSize(20, 20)
+        icon_size = self.ui_config.icon_small
+        icon_widget.setFixedSize(icon_size, icon_size)
         layout.addWidget(icon_widget, alignment=Qt.AlignmentFlag.AlignVCenter)
         
         # Text content - vertical stack
@@ -44,11 +50,11 @@ class StatsCard(CardWidget):
         text_layout.setContentsMargins(0, 0, 0, 0)
         
         title_label = CaptionLabel(title, self)
-        title_label.setStyleSheet("color: #888; font-size: 10px;")
+        title_label.setStyleSheet(f"color: #888; font-size: {self.ui_config.font_caption}px;")
         text_layout.addWidget(title_label)
         
         self.value_label = StrongBodyLabel("0", self)
-        self.value_label.setFont(QFont("Segoe UI", 20, QFont.Weight.Bold))
+        self.value_label.setFont(QFont("Segoe UI", self.ui_config.font_stats_value, QFont.Weight.Bold))
         self.value_label.setStyleSheet("color: #0078D4;")
         text_layout.addWidget(self.value_label)
         
@@ -65,30 +71,38 @@ class AntennaControlCard(CardWidget):
     
     config_changed = pyqtSignal(dict)
     
-    # Fixed toolbar height - enough for buttons with icons
-    TOOLBAR_HEIGHT = 56
-    
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.ui_config = get_ui_config()
         self._setup_ui()
-        self.setFixedHeight(self.TOOLBAR_HEIGHT)
+        self.setFixedHeight(self.ui_config.toolbar_height)
     
     def _setup_ui(self):
         # Single horizontal row layout
         layout = QHBoxLayout(self)
-        layout.setContentsMargins(12, 0, 12, 0)  # Minimal vertical padding
-        layout.setSpacing(8)
+        # Ultra compact margins on small screens
+        margin = 6 if self.ui_config.profile == 'small' else self.ui_config.card_margin
+        layout.setContentsMargins(margin, 0, margin, 0)
+        layout.setSpacing(3 if self.ui_config.profile == 'small' else 6)
         layout.setAlignment(Qt.AlignmentFlag.AlignVCenter)
         
-        # Title label
-        title = StrongBodyLabel("Antenna", self)
-        title.setStyleSheet("color: #333;")
-        layout.addWidget(title, alignment=Qt.AlignmentFlag.AlignVCenter)
-        
-        # Visual separator
-        layout.addSpacing(8)
-        self._add_separator(layout)
-        layout.addSpacing(8)
+        # Title label (hide on small screens to save space)
+        if self.ui_config.profile != 'small':
+            title = StrongBodyLabel("Antenna", self)
+            title.setStyleSheet("color: #333;")
+            title.setFont(QFont("Segoe UI", self.ui_config.font_body, QFont.Weight.DemiBold))
+            layout.addWidget(title, alignment=Qt.AlignmentFlag.AlignVCenter)
+            
+            # Visual separator
+            layout.addSpacing(8)
+            self._add_separator(layout)
+            layout.addSpacing(8)
+        else:
+            # On small screens, add compact label
+            title = CaptionLabel("Ant:", self)
+            title.setStyleSheet("color: #666; font-weight: bold;")
+            layout.addWidget(title, alignment=Qt.AlignmentFlag.AlignVCenter)
+            layout.addSpacing(2)
         
         # Antenna checkboxes
         self.ant_checks = []
@@ -99,16 +113,18 @@ class AntennaControlCard(CardWidget):
             self.ant_checks.append(cb)
             layout.addWidget(cb, alignment=Qt.AlignmentFlag.AlignVCenter)
         
-        # Visual separator
-        layout.addSpacing(12)
-        self._add_separator(layout)
-        layout.addSpacing(12)
+        # Visual separator (compact on small screens)
+        spacing = 4 if self.ui_config.profile == 'small' else 12
+        layout.addSpacing(spacing)
+        if self.ui_config.profile != 'small':
+            self._add_separator(layout)
+            layout.addSpacing(spacing)
         
         # Session selection
-        session_label = CaptionLabel("Session", self)
-        session_label.setStyleSheet("color: #666;")
+        session_label = CaptionLabel("Ses:" if self.ui_config.profile == 'small' else "Session", self)
+        session_label.setStyleSheet("color: #666; font-weight: bold;" if self.ui_config.profile == 'small' else "color: #666;")
         layout.addWidget(session_label, alignment=Qt.AlignmentFlag.AlignVCenter)
-        layout.addSpacing(4)
+        layout.addSpacing(2 if self.ui_config.profile == 'small' else 4)
         
         self.session_group = []
         for name in ['S0', 'S1', 'S2', 'S3']:
@@ -118,16 +134,18 @@ class AntennaControlCard(CardWidget):
             layout.addWidget(rb, alignment=Qt.AlignmentFlag.AlignVCenter)
         self.session_group[0].setChecked(True)
         
-        # Visual separator
-        layout.addSpacing(12)
-        self._add_separator(layout)
-        layout.addSpacing(12)
+        # Visual separator (compact on small screens)
+        spacing = 4 if self.ui_config.profile == 'small' else 12
+        layout.addSpacing(spacing)
+        if self.ui_config.profile != 'small':
+            self._add_separator(layout)
+            layout.addSpacing(spacing)
         
         # Target selection
-        target_label = CaptionLabel("Target", self)
-        target_label.setStyleSheet("color: #666;")
+        target_label = CaptionLabel("Tgt:" if self.ui_config.profile == 'small' else "Target", self)
+        target_label.setStyleSheet("color: #666; font-weight: bold;" if self.ui_config.profile == 'small' else "color: #666;")
         layout.addWidget(target_label, alignment=Qt.AlignmentFlag.AlignVCenter)
-        layout.addSpacing(4)
+        layout.addSpacing(2 if self.ui_config.profile == 'small' else 4)
         
         self.target_a = RadioButton("A", self)
         self.target_b = RadioButton("B", self)
@@ -226,34 +244,41 @@ class InventoryPage(QWidget):
         super().__init__(parent)
         self.setObjectName("inventoryPage")
         self._is_running = False
+        self.ui_config = get_ui_config()
         self._setup_ui()
     
     def _setup_ui(self):
         """Setup the page UI"""
         layout = QVBoxLayout(self)
-        layout.setSpacing(12)
-        layout.setContentsMargins(36, 16, 36, 16)
+        layout.setSpacing(self.ui_config.layout_spacing)
+        layout.setContentsMargins(
+            self.ui_config.page_margin_h,
+            self.ui_config.page_margin_v,
+            self.ui_config.page_margin_h,
+            self.ui_config.page_margin_v
+        )
         
         # ============================================================
         # ROW 1: Page title (minimal space)
         # ============================================================
         title = StrongBodyLabel("Real-Time Inventory", self)
-        title.setFont(QFont("Segoe UI", 22, QFont.Weight.DemiBold))
+        title.setFont(QFont("Segoe UI", self.ui_config.font_page_title, QFont.Weight.DemiBold))
         layout.addWidget(title)
         
         # ============================================================
         # ROW 2: Stats cards (fixed height, no stretch)
         # ============================================================
         stats_layout = QHBoxLayout()
-        stats_layout.setSpacing(12)
+        stats_layout.setSpacing(self.ui_config.card_spacing)
         
         self.unique_tags_card = StatsCard("Unique Tags", FIF.TAG, self)
         self.total_reads_card = StatsCard("Total Reads", FIF.CALORIES, self)
         self.detected_card = StatsCard("Detected (Coming)", FIF.CHECKBOX, self)
         
         # Set fixed height for stats cards - they will expand equally to fill width
+        card_height = self.ui_config.stats_card_height
         for card in [self.unique_tags_card, self.total_reads_card, self.detected_card]:
-            card.setFixedHeight(70)
+            card.setFixedHeight(card_height)
             card.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         
         stats_layout.addWidget(self.unique_tags_card, 1)
@@ -266,41 +291,65 @@ class InventoryPage(QWidget):
         # ROW 3: TOOLBAR - Single row controls + actions
         # ============================================================
         toolbar_layout = QHBoxLayout()
-        toolbar_layout.setSpacing(12)
+        toolbar_layout.setSpacing(self.ui_config.card_spacing)
         
         # Action buttons card - stretch factor 1 (positioned first now)
         btn_frame = CardWidget(self)
-        btn_frame.setFixedHeight(AntennaControlCard.TOOLBAR_HEIGHT)
-        btn_frame.setMinimumWidth(420)  # Ensure minimum width for buttons
+        btn_frame.setFixedHeight(self.ui_config.toolbar_height)
+        # Much smaller minimum width for small screens
+        btn_frame.setMinimumWidth(200 if self.ui_config.profile == 'small' else 420)
         btn_frame.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         
         btn_layout = QHBoxLayout(btn_frame)
-        btn_layout.setContentsMargins(16, 0, 16, 0)
-        btn_layout.setSpacing(12)
+        btn_margin = 6 if self.ui_config.profile == 'small' else self.ui_config.card_margin
+        btn_layout.setContentsMargins(btn_margin, 0, btn_margin, 0)
+        btn_layout.setSpacing(3 if self.ui_config.profile == 'small' else self.ui_config.layout_spacing)
         btn_layout.setAlignment(Qt.AlignmentFlag.AlignVCenter)
         
-        # Action label
-        btn_title = CaptionLabel("Actions", self)
-        btn_title.setStyleSheet("color: #666;")
-        btn_layout.addWidget(btn_title, alignment=Qt.AlignmentFlag.AlignVCenter)
-        btn_layout.addSpacing(8)
+        # Action label (hide on small screens to save space)
+        if self.ui_config.profile != 'small':
+            btn_title = CaptionLabel("Actions", self)
+            btn_title.setStyleSheet("color: #666;")
+            btn_layout.addWidget(btn_title, alignment=Qt.AlignmentFlag.AlignVCenter)
+            btn_layout.addSpacing(8)
         
-        # Toolbar buttons - Icon FIRST, then text (Fluent Widgets signature)
-        self.start_btn = PrimaryPushButton(FIF.PLAY, "Start", self)
-        self.stop_btn = PushButton(FIF.PAUSE, "Stop", self)
-        self.stop_btn.setEnabled(False)
-        self.clear_btn = PushButton(FIF.DELETE, "Clear", self)
-        self.export_btn = PushButton(FIF.SAVE, "Export", self)
-        
-        # Enforce minimum widths to guarantee text fits
-        self.start_btn.setMinimumWidth(90)
-        self.stop_btn.setMinimumWidth(85)
-        self.clear_btn.setMinimumWidth(85)
-        self.export_btn.setMinimumWidth(90)
+        # Toolbar buttons - Compact on small screens to save space
+        if self.ui_config.profile == 'small':
+            # Very short text buttons for compact layout
+            self.start_btn = PrimaryPushButton(FIF.PLAY, "Start", self)
+            self.start_btn.setToolTip("Start Inventory")
+            self.stop_btn = PushButton(FIF.PAUSE, "Stop", self)
+            self.stop_btn.setToolTip("Stop Inventory")
+            self.stop_btn.setEnabled(False)
+            self.clear_btn = PushButton(FIF.DELETE, "Del", self)
+            self.clear_btn.setToolTip("Clear Data")
+            self.export_btn = PushButton(FIF.SAVE, "Exp", self)
+            self.export_btn.setToolTip("Export to Excel")
+            
+            # Compact square buttons
+            btn_width = self.ui_config.button_height * 3 - 20
+            self.start_btn.setFixedWidth(btn_width)
+            self.stop_btn.setFixedWidth(btn_width)
+            self.clear_btn.setFixedWidth(btn_width)
+            self.export_btn.setFixedWidth(btn_width)
+        else:
+            # Full buttons with text on larger screens
+            self.start_btn = PrimaryPushButton(FIF.PLAY, "Start", self)
+            self.stop_btn = PushButton(FIF.PAUSE, "Stop", self)
+            self.stop_btn.setEnabled(False)
+            self.clear_btn = PushButton(FIF.DELETE, "Clear", self)
+            self.export_btn = PushButton(FIF.SAVE, "Export", self)
+            
+            btn_width = 90
+            self.start_btn.setMinimumWidth(btn_width)
+            self.stop_btn.setMinimumWidth(btn_width - 5)
+            self.clear_btn.setMinimumWidth(btn_width - 5)
+            self.export_btn.setMinimumWidth(btn_width)
         
         # Uniform button styling
+        btn_height = self.ui_config.button_height
         for btn in [self.start_btn, self.stop_btn, self.clear_btn, self.export_btn]:
-            btn.setFixedHeight(34)
+            btn.setFixedHeight(btn_height)
             # Policy: Minimum = can expand but won't shrink below minimum
             btn.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
         
@@ -322,16 +371,18 @@ class InventoryPage(QWidget):
         # ROW 4: Data Tables - EXPAND to fill remaining space
         # ============================================================
         tables_layout = QHBoxLayout()
-        tables_layout.setSpacing(16)
+        tables_layout.setSpacing(self.ui_config.card_spacing)
         
         # Inventory list
         inv_frame = CardWidget(self)
         inv_frame.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         inv_layout = QVBoxLayout(inv_frame)
-        inv_layout.setContentsMargins(12, 12, 12, 12)
-        inv_layout.setSpacing(8)
+        card_margin = self.ui_config.card_margin
+        inv_layout.setContentsMargins(card_margin, card_margin, card_margin, card_margin)
+        inv_layout.setSpacing(6)
         
         inv_title = StrongBodyLabel("Inventory List", self)
+        inv_title.setFont(QFont("Segoe UI", self.ui_config.font_card_title, QFont.Weight.DemiBold))
         inv_layout.addWidget(inv_title)
         
         self.inventory_table = TagTableWidget(self)
@@ -349,10 +400,11 @@ class InventoryPage(QWidget):
         det_frame = CardWidget(self)
         det_frame.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         det_layout = QVBoxLayout(det_frame)
-        det_layout.setContentsMargins(12, 12, 12, 12)
-        det_layout.setSpacing(8)
+        det_layout.setContentsMargins(card_margin, card_margin, card_margin, card_margin)
+        det_layout.setSpacing(6)
         
         det_title = StrongBodyLabel("Detected Tags (Coming)", self)
+        det_title.setFont(QFont("Segoe UI", self.ui_config.font_card_title, QFont.Weight.DemiBold))
         det_layout.addWidget(det_title)
         
         self.detected_table = TagTableWidget(self)

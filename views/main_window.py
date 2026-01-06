@@ -23,6 +23,9 @@ from .settings_page import SettingsPage
 from .connection_page import ConnectionPage
 from .gpio_page import GPIOPage
 
+# Import responsive UI configuration
+from utils.ui_config import get_ui_config
+
 
 class MainWindow(FluentWindow):
     """
@@ -42,10 +45,13 @@ class MainWindow(FluentWindow):
         app_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         logo_path = os.path.join(app_root, 'logo-nextwaves.png')
         
-        # Window setup
+        # Get responsive UI configuration
+        self.ui_config = get_ui_config()
+        
+        # Window setup with responsive sizing
         self.setWindowTitle("RFID Reader - Modern Interface")
-        self.resize(1280, 800)
-        self.setMinimumSize(1024, 700)
+        self.resize(self.ui_config.window_width, self.ui_config.window_height)
+        self.setMinimumSize(self.ui_config.min_width, self.ui_config.min_height)
         
         # Set window icon from logo
         if os.path.exists(logo_path):
@@ -60,6 +66,11 @@ class MainWindow(FluentWindow):
         
         # Setup navigation
         self._setup_navigation()
+        
+        # Collapse navigation on small screens to save space
+        if self.ui_config.nav_collapsed_default:
+            self.navigationInterface.setExpandWidth(self.ui_config.nav_width_expanded)
+            self.navigationInterface.setCollapsible(True)
         
         # Center window
         self._center_window()
