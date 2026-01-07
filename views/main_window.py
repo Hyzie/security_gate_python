@@ -41,9 +41,9 @@ class MainWindow(FluentWindow):
     def __init__(self):
         super().__init__()
         
-        # Get the application root directory
-        app_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        logo_path = os.path.join(app_root, 'logo-nextwaves.png')
+        # Prepare theme-aware logo paths
+        self.nav_logo_widget = None
+        self.logo_path = self._current_logo_path()
         
         # Get responsive UI configuration
         self.ui_config = get_ui_config()
@@ -54,12 +54,14 @@ class MainWindow(FluentWindow):
         self.setMinimumSize(self.ui_config.min_width, self.ui_config.min_height)
         
         # Set window icon from logo
-        if os.path.exists(logo_path):
-            self.setWindowIcon(QIcon(logo_path))
+        if os.path.exists(self.logo_path):
+            self.setWindowIcon(QIcon(self.logo_path))
         
         # Set theme
-        setTheme(Theme.LIGHT)
+        setTheme(Theme.DARK)
         setThemeColor('#0078D4')  # Windows 11 accent blue
+        # Sync window icon with current theme
+        self._update_main_logo_assets()
         
         # Create pages
         self._create_pages()
@@ -112,6 +114,29 @@ class MainWindow(FluentWindow):
         # Add separator and bottom items
         self.navigationInterface.addSeparator()
         
+        # Theme toggle switch
+        from qfluentwidgets import Action
+        self.theme_action = Action(FIF.CONSTRACT, 'Toggle Theme')
+        self.theme_action.triggered.connect(self._toggle_theme)
+        self.navigationInterface.addItem(
+            routeKey='theme',
+            icon=FIF.CONSTRACT,
+            text='Theme',
+            onClick=self._toggle_theme,
+            selectable=False,
+            position=NavigationItemPosition.BOTTOM
+        )
+        
+        # Add logo avatar at bottom if enabled and logo exists
+        if self.ui_config.show_logo_in_header and os.path.exists(self.logo_path):
+            self.nav_logo_widget = NavigationAvatarWidget('NWS', self.logo_path)
+            self.navigationInterface.addWidget(
+                routeKey='logo',
+                widget=self.nav_logo_widget,
+                onClick=self._show_about,
+                position=NavigationItemPosition.BOTTOM
+            )
+        
         # About/Info at bottom
         self.navigationInterface.addItem(
             routeKey='about',
@@ -141,6 +166,70 @@ class MainWindow(FluentWindow):
             duration=3000,
             parent=self
         )
+    
+    def _toggle_theme(self):
+        """Toggle between light and dark theme"""
+        from qfluentwidgets import isDarkTheme, InfoBar, InfoBarPosition
+        
+        # Toggle theme
+        new_theme = Theme.LIGHT if isDarkTheme() else Theme.DARK
+        setTheme(new_theme)
+        # Refresh window and navigation logos
+        self._update_main_logo_assets()
+        # Refresh page logos after theme change
+        self._refresh_logos()
+        
+        # Show notification
+        theme_name = "Dark" if new_theme == Theme.DARK else "Light"
+        InfoBar.success(
+            title='Theme Changed',
+            content=f'Switched to {theme_name} mode',
+            orient=Qt.Orientation.Horizontal,
+            isClosable=True,
+            position=InfoBarPosition.TOP_RIGHT,
+            duration=2000,
+            parent=self
+        )
+
+    def _current_logo_path(self) -> str:
+        """Get the logo path matching the current theme"""
+        from qfluentwidgets import isDarkTheme
+        app_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        filename = 'logo-nextwaves.png' if isDarkTheme() else 'logo-nextwaves_.png'
+        return os.path.join(app_root, filename)
+
+    def _update_main_logo_assets(self):
+        """Update window icon and navigation avatar to match theme"""
+        self.logo_path = self._current_logo_path()
+        if os.path.exists(self.logo_path):
+            self.setWindowIcon(QIcon(self.logo_path))
+        if self.nav_logo_widget is not None:
+            # Try updating avatar image directly; fallback by recreating if needed
+            if hasattr(self.nav_logo_widget, 'setAvatar'):
+                self.nav_logo_widget.setAvatar(self.logo_path)
+            elif hasattr(self.nav_logo_widget, 'setImage'):
+                self.nav_logo_widget.setImage(self.logo_path)
+            else:
+                # As a fallback, recreate the widget
+                self.navigationInterface.removeWidget('logo') if hasattr(self.navigationInterface, 'removeWidget') else None
+                self.nav_logo_widget = NavigationAvatarWidget('NWS', self.logo_path)
+                self.navigationInterface.addWidget(
+                    routeKey='logo',
+                    widget=self.nav_logo_widget,
+                    onClick=self._show_about,
+                    position=NavigationItemPosition.BOTTOM
+                )
+
+    def _refresh_logos(self):
+        """Refresh logos on all pages to match the current theme"""
+        for page in [
+            getattr(self, 'connection_page', None),
+            getattr(self, 'inventory_page', None),
+            getattr(self, 'settings_page', None),
+            getattr(self, 'gpio_page', None)
+        ]:
+            if page and hasattr(page, 'refresh_logo'):
+                page.refresh_logo()
     
     # ============================================================
     # Public interface methods for controller

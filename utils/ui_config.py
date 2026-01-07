@@ -131,19 +131,19 @@ class UIConfig:
             self.button_height = 36        # Touch-friendly (was 34-40)
             self.toolbar_height = 44       # Compact toolbar (was 56)
             self.stats_card_height = 56    # Compact stats (was 70)
-            self.logo_height = 50          # Smaller logo (was 100)
+            self.logo_height = 80          # Bigger logo for visibility
             self.input_row_height = 36     # Input fields (was 40+)
         elif self.profile == 'medium':
             self.button_height = 38
             self.toolbar_height = 50
             self.stats_card_height = 64
-            self.logo_height = 70
+            self.logo_height = 100
             self.input_row_height = 40
         else:  # large
             self.button_height = 40
             self.toolbar_height = 56
             self.stats_card_height = 70
-            self.logo_height = 100
+            self.logo_height = 120
             self.input_row_height = 40
         
         # ============================================================
@@ -175,8 +175,8 @@ class UIConfig:
         # Collapse navigation by default on small screens
         self.nav_collapsed_default = (self.profile == 'small')
         
-        # Hide non-essential elements on small screens
-        self.show_logo_in_header = (self.profile != 'small')
+        # Show logo on all screens including small
+        self.show_logo_in_header = True
         
         # Reduce table row heights on small screens
         if self.profile == 'small':

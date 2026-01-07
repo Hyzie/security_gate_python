@@ -6,11 +6,10 @@ Windows 11 Fluent Design
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
     QTableWidget, QTableWidgetItem, QHeaderView,
-    QAbstractItemView, QSpacerItem, QSizePolicy, QLabel
+    QAbstractItemView, QSpacerItem, QSizePolicy
 )
-from PyQt6.QtCore import Qt, pyqtSignal, QTimer, QUrl
-from PyQt6.QtGui import QFont, QColor, QPixmap, QCursor, QDesktopServices
-import os
+from PyQt6.QtCore import Qt, pyqtSignal, QTimer
+from PyQt6.QtGui import QFont, QColor
 
 from qfluentwidgets import (
     CardWidget, StrongBodyLabel, BodyLabel, CaptionLabel,
@@ -204,63 +203,33 @@ class TagTableWidget(TableWidget):
         self.horizontalHeader().setStretchLastSection(True)
         self.setAlternatingRowColors(True)
         
-        # Style - Dark mode compatible
-        from qfluentwidgets import isDarkTheme
-        if isDarkTheme():
-            self.setStyleSheet("""
-                TagTableWidget {
-                    border: 1px solid #3D3D3D;
-                    border-radius: 8px;
-                    background-color: #2B2B2B;
-                    color: #E0E0E0;
-                }
-                TagTableWidget::item {
-                    padding: 8px;
-                    border-bottom: 1px solid #3D3D3D;
-                }
-                TagTableWidget::item:selected {
-                    background-color: #0078D4;
-                    color: #FFFFFF;
-                }
-                TagTableWidget::item:hover {
-                    background-color: #3D3D3D;
-                }
-                QHeaderView::section {
-                    background-color: #333333;
-                    padding: 10px 8px;
-                    border: none;
-                    border-bottom: 2px solid #0078D4;
-                    font-weight: bold;
-                    color: #E0E0E0;
-                }
-            """)
-        else:
-            self.setStyleSheet("""
-                TagTableWidget {
-                    border: 1px solid #E0E0E0;
-                    border-radius: 8px;
-                    background-color: #FFFFFF;
-                }
-                TagTableWidget::item {
-                    padding: 8px;
-                    border-bottom: 1px solid #F0F0F0;
-                }
-                TagTableWidget::item:selected {
-                    background-color: #E3F2FD;
-                    color: #1976D2;
-                }
-                TagTableWidget::item:hover {
-                    background-color: #F5F5F5;
-                }
-                QHeaderView::section {
-                    background-color: #F8F8F8;
-                    padding: 10px 8px;
-                    border: none;
-                    border-bottom: 2px solid #0078D4;
-                    font-weight: bold;
-                    color: #333;
-                }
-            """)
+        # Style
+        self.setStyleSheet("""
+            TagTableWidget {
+                border: 1px solid #E0E0E0;
+                border-radius: 8px;
+                background-color: #FFFFFF;
+            }
+            TagTableWidget::item {
+                padding: 8px;
+                border-bottom: 1px solid #F0F0F0;
+            }
+            TagTableWidget::item:selected {
+                background-color: #E3F2FD;
+                color: #1976D2;
+            }
+            TagTableWidget::item:hover {
+                background-color: #F5F5F5;
+            }
+            QHeaderView::section {
+                background-color: #F8F8F8;
+                padding: 10px 8px;
+                border: none;
+                border-bottom: 2px solid #0078D4;
+                font-weight: bold;
+                color: #333;
+            }
+        """)
 
 
 class InventoryPage(QWidget):
@@ -276,30 +245,7 @@ class InventoryPage(QWidget):
         self.setObjectName("inventoryPage")
         self._is_running = False
         self.ui_config = get_ui_config()
-        self.logo_label = None
-        self.header_layout = None
         self._setup_ui()
-
-    def refresh_logo(self):
-        """Refresh the header logo based on current theme"""
-        if not self.ui_config.show_logo_in_header:
-            return
-        if self.logo_label is None:
-            return
-        from qfluentwidgets import isDarkTheme
-        logo_filename = 'logo-nextwaves.png' if isDarkTheme() else 'logo-nextwaves_.png'
-        logo_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), logo_filename)
-        if not os.path.exists(logo_path):
-            return
-        pixmap = QPixmap(logo_path)
-        device_ratio = self.devicePixelRatioF()
-        pixmap.setDevicePixelRatio(device_ratio)
-        scaled_pixmap = pixmap.scaledToHeight(
-            int(self.ui_config.logo_height * device_ratio),
-            Qt.TransformationMode.SmoothTransformation
-        )
-        scaled_pixmap.setDevicePixelRatio(device_ratio)
-        self.logo_label.setPixmap(scaled_pixmap)
     
     def _setup_ui(self):
         """Setup the page UI"""
@@ -313,27 +259,11 @@ class InventoryPage(QWidget):
         )
         
         # ============================================================
-        # ROW 1: Page title with logo header
+        # ROW 1: Page title (minimal space)
         # ============================================================
-        header_layout = QHBoxLayout()
-        self.header_layout = header_layout
-        
-        title = StrongBodyLabel("Inventory", self)
+        title = StrongBodyLabel("Real-Time Inventory", self)
         title.setFont(QFont("Segoe UI", self.ui_config.font_page_title, QFont.Weight.DemiBold))
-        header_layout.addWidget(title)
-        header_layout.addStretch()
-        
-        # Add logo on the right
-        if self.ui_config.show_logo_in_header:
-            self.logo_label = QLabel(self)
-            self.logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            self.logo_label.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-            self.logo_label.setToolTip("Visit NextWaves.com")
-            self.logo_label.mousePressEvent = lambda event: QDesktopServices.openUrl(QUrl("https://nextwaves.com/"))
-            header_layout.addWidget(self.logo_label)
-            self.refresh_logo()
-        
-        layout.addLayout(header_layout)
+        layout.addWidget(title)
         
         # ============================================================
         # ROW 2: Stats cards (fixed height, no stretch)

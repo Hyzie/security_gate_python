@@ -12,8 +12,8 @@ from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
     QFrame, QSpacerItem, QSizePolicy, QLabel
 )
-from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtGui import QFont, QPixmap
+from PyQt6.QtCore import Qt, pyqtSignal, QUrl
+from PyQt6.QtGui import QFont, QPixmap, QCursor, QDesktopServices
 import sys
 import os
 
@@ -285,8 +285,28 @@ class ConnectionPage(QWidget):
         super().__init__(parent)
         self.setObjectName("connectionPage")
         self.ui_config = get_ui_config()
+        self.logo_label = None
         self._setup_ui()
         self.refresh_ports()
+
+    def refresh_logo(self):
+        """Refresh the header logo based on current theme"""
+        if not self.ui_config.show_logo_in_header or self.logo_label is None:
+            return
+        from qfluentwidgets import isDarkTheme
+        logo_filename = 'logo-nextwaves.png' if isDarkTheme() else 'logo-nextwaves_.png'
+        logo_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), logo_filename)
+        if not os.path.exists(logo_path):
+            return
+        pixmap = QPixmap(logo_path)
+        device_ratio = self.devicePixelRatioF()
+        pixmap.setDevicePixelRatio(device_ratio)
+        scaled_pixmap = pixmap.scaledToHeight(
+            int(self.ui_config.logo_height * device_ratio),
+            Qt.TransformationMode.SmoothTransformation
+        )
+        scaled_pixmap.setDevicePixelRatio(device_ratio)
+        self.logo_label.setPixmap(scaled_pixmap)
     
     def _setup_ui(self):
         """Setup the page UI"""
@@ -323,8 +343,12 @@ class ConnectionPage(QWidget):
         
         # Right side: Logo (hide on small screens to save space)
         if self.ui_config.show_logo_in_header:
-            logo_label = QLabel(self)
-            logo_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'logo-nextwaves.png')
+            self.logo_label = QLabel(self)
+            
+            # Use different logo for light/dark mode
+            from qfluentwidgets import isDarkTheme
+            logo_filename = 'logo-nextwaves.png' if isDarkTheme() else 'logo-nextwaves_.png'
+            logo_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), logo_filename)
             
             if os.path.exists(logo_path):
                 # Load image at high quality
@@ -341,10 +365,13 @@ class ConnectionPage(QWidget):
                 )
                 scaled_pixmap.setDevicePixelRatio(device_ratio)
                 
-                logo_label.setPixmap(scaled_pixmap)
-                logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter)
-                logo_label.setScaledContents(True)
-                logo_label.setStyleSheet("""
+                self.logo_label.setPixmap(scaled_pixmap)
+                self.logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter)
+                self.logo_label.setScaledContents(True)
+                self.logo_label.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+                self.logo_label.setToolTip("Visit NextWaves.com")
+                self.logo_label.mousePressEvent = lambda event: QDesktopServices.openUrl(QUrl("https://nextwaves.com/"))
+                self.logo_label.setStyleSheet("""
                     QLabel {
                         background-color: transparent;
                         padding: 8px;
@@ -352,7 +379,7 @@ class ConnectionPage(QWidget):
                     }
                 """)
             
-            header_layout.addWidget(logo_label)
+            header_layout.addWidget(self.logo_label)
         
         header_layout.setContentsMargins(0, 0, 0, self.ui_config.layout_spacing)
         

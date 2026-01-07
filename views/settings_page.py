@@ -6,10 +6,11 @@ REFACTORED FOR 1024x600 RESPONSIVE DESIGN
 
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QGridLayout,
-    QFrame, QSpacerItem, QSizePolicy, QButtonGroup
+    QFrame, QSpacerItem, QSizePolicy, QButtonGroup, QLabel
 )
-from PyQt6.QtCore import Qt, pyqtSignal
-from PyQt6.QtGui import QFont
+from PyQt6.QtCore import Qt, pyqtSignal, QUrl
+from PyQt6.QtGui import QFont, QPixmap, QCursor, QDesktopServices
+import os
 
 from qfluentwidgets import (
     CardWidget, StrongBodyLabel, BodyLabel, CaptionLabel,
@@ -565,8 +566,28 @@ class SettingsPage(QWidget):
         
         # CRITICAL: Object name for navigation system
         self.setObjectName("settingsPage")
+        self.logo_label = None
         
         self._setup_ui()
+
+    def refresh_logo(self):
+        """Refresh the header logo based on current theme"""
+        from qfluentwidgets import isDarkTheme
+        if self.logo_label is None:
+            return
+        logo_filename = 'logo-nextwaves.png' if isDarkTheme() else 'logo-nextwaves_.png'
+        logo_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), logo_filename)
+        if not os.path.exists(logo_path):
+            return
+        pixmap = QPixmap(logo_path)
+        device_ratio = self.devicePixelRatioF()
+        pixmap.setDevicePixelRatio(device_ratio)
+        scaled_pixmap = pixmap.scaledToHeight(
+            int(get_ui_config().logo_height * device_ratio),
+            Qt.TransformationMode.SmoothTransformation
+        )
+        scaled_pixmap.setDevicePixelRatio(device_ratio)
+        self.logo_label.setPixmap(scaled_pixmap)
     
     def _setup_ui(self):
         # Outer layout
@@ -588,14 +609,53 @@ class SettingsPage(QWidget):
         layout.setSpacing(16)
         layout.setContentsMargins(30, 20, 30, 30)
         
-        # ─── Title ────────────────────────────────────────────
+        # Get UI config
+        from utils.ui_config import get_ui_config
+        ui_config = get_ui_config()
+        
+        # ─── Title with Logo ──────────────────────────────────
+        header_layout = QHBoxLayout()
+        
+        title_container = QVBoxLayout()
+        title_container.setSpacing(2)
+        
         title = StrongBodyLabel("Reader Settings", self)
         title.setFont(QFont("Segoe UI", 24, QFont.Weight.DemiBold))
-        layout.addWidget(title)
+        title_container.addWidget(title)
         
         subtitle = CaptionLabel("Configure RFID reader parameters", self)
         subtitle.setStyleSheet("color: #666;")
-        layout.addWidget(subtitle)
+        title_container.addWidget(subtitle)
+        
+        header_layout.addLayout(title_container)
+        header_layout.addStretch()
+        
+        # Add logo on the right
+        if ui_config.show_logo_in_header:
+            self.logo_label = QLabel(self)
+            
+            # Use different logo for light/dark mode
+            from qfluentwidgets import isDarkTheme
+            logo_filename = 'logo-nextwaves.png' if isDarkTheme() else 'logo-nextwaves_.png'
+            logo_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), logo_filename)
+            
+            if os.path.exists(logo_path):
+                pixmap = QPixmap(logo_path)
+                device_ratio = self.devicePixelRatioF()
+                pixmap.setDevicePixelRatio(device_ratio)
+                scaled_pixmap = pixmap.scaledToHeight(
+                    int(ui_config.logo_height * device_ratio),
+                    Qt.TransformationMode.SmoothTransformation
+                )
+                scaled_pixmap.setDevicePixelRatio(device_ratio)
+                self.logo_label.setPixmap(scaled_pixmap)
+                self.logo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                self.logo_label.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+                self.logo_label.setToolTip("Visit NextWaves.com")
+                self.logo_label.mousePressEvent = lambda event: QDesktopServices.openUrl(QUrl("https://nextwaves.com/"))
+                header_layout.addWidget(self.logo_label)
+        
+        layout.addLayout(header_layout)
         
         layout.addSpacing(10)
         
