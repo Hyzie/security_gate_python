@@ -19,15 +19,10 @@ except ImportError:
 class ExcelExporter:
     """Export RFID read history to Excel format"""
     
-    # Styling
-    HEADER_FILL = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
-    HEADER_FONT = Font(bold=True, color="FFFFFF")
-    BORDER = Border(
-        left=Side(style='thin'),
-        right=Side(style='thin'),
-        top=Side(style='thin'),
-        bottom=Side(style='thin')
-    )
+    # Styling - only initialized if openpyxl is available
+    HEADER_FILL = None
+    HEADER_FONT = None
+    BORDER = None
     
     @staticmethod
     def is_available() -> bool:
@@ -141,3 +136,14 @@ class ExcelExporter:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         return f"{prefix}_{timestamp}.xlsx"
 
+
+# Initialize styling if openpyxl is available
+if HAS_OPENPYXL:
+    ExcelExporter.HEADER_FILL = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+    ExcelExporter.HEADER_FONT = Font(bold=True, color="FFFFFF")
+    ExcelExporter.BORDER = Border(
+        left=Side(style='thin'),
+        right=Side(style='thin'),
+        top=Side(style='thin'),
+        bottom=Side(style='thin')
+    )
