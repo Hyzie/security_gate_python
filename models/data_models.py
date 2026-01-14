@@ -12,7 +12,7 @@ import threading
 
 class SensorDirection(Enum):
     """Direction detected by dual-sensor system"""
-    UNKNOWN = auto()
+    X = auto()
     IN = auto()   # S2 activates before S1
     OUT = auto()  # S1 activates before S2
 
@@ -50,7 +50,7 @@ class SensorState:
     s2_activated_time: Optional[datetime] = None
     s1_was_active: bool = False
     s2_was_active: bool = False
-    last_direction: SensorDirection = SensorDirection.UNKNOWN
+    last_direction: SensorDirection = SensorDirection.X
     _lock: threading.Lock = field(default_factory=threading.Lock, repr=False)
     
     @property
@@ -61,7 +61,7 @@ class SensorState:
     def get_direction(self) -> SensorDirection:
         """Determine direction based on sensor activation order"""
         if not self.both_sensors_activated:
-            return SensorDirection.UNKNOWN
+            return SensorDirection.X
         return SensorDirection.OUT if self.s1_activated_time < self.s2_activated_time else SensorDirection.IN
     
     def get_time_difference_ms(self) -> float:
@@ -80,7 +80,7 @@ class SensorState:
         """Reset sensor state"""
         self.s1_activated_time = None
         self.s2_activated_time = None
-        self.last_direction = SensorDirection.UNKNOWN
+        self.last_direction = SensorDirection.X
 
 
 @dataclass

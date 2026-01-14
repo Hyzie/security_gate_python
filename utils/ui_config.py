@@ -6,6 +6,7 @@ This module provides screen-aware configuration values that adapt
 UI elements based on the detected screen resolution.
 """
 
+import os
 import sys
 from PyQt6.QtWidgets import QApplication
 from PyQt6.QtCore import QSize

@@ -50,7 +50,7 @@ class ReaderModel:
         
         self._settings = ReaderSettings()
         self._total_tag_count = 0
-        self._detected_direction = SensorDirection.UNKNOWN
+        self._detected_direction = SensorDirection.X
         
         # Sensor activation times for export
         self._last_s1_activation: Optional[datetime] = None
@@ -102,7 +102,7 @@ class ReaderModel:
             self._epc_dictionary.clear()
             self._epc_read_history.clear()
         self._total_tag_count = 0
-        self._detected_direction = SensorDirection.UNKNOWN
+        self._detected_direction = SensorDirection.X
     
     def process_tag(self, tag: RXInventoryTag) -> bool:
         """
@@ -157,7 +157,7 @@ class ReaderModel:
         Returns True if both sensors triggered (direction determined)
         """
         should_trigger = False
-        direction = SensorDirection.UNKNOWN
+        direction = SensorDirection.X
         time_diff = 0.0
         
         with self._sensor_lock:

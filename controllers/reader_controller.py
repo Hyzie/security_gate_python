@@ -313,8 +313,9 @@ class ReaderController(QObject):
         """Stop inventory operation"""
         self._is_inventory_running = False
         
-        # Stop the UI update timer
-        self._ui_update_timer.stop()
+        # Stop the UI update timer safely (must be on main thread)
+        if self._ui_update_timer.isActive():
+            self._ui_update_timer.stop()
         
         # Flush any remaining tags to UI
         self._flush_ui_updates()

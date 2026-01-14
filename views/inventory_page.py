@@ -457,10 +457,8 @@ class InventoryPage(QWidget):
         
         self.inventory_table = TagTableWidget(self)
         self.inventory_table.setColumnCount(5)
-        self.inventory_table.setHorizontalHeaderLabels(["EPC", "Antenna", "Count", "RSSI", "Frequency"])
-        self.inventory_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
-        for i in range(1, 5):
-            self.inventory_table.horizontalHeader().setSectionResizeMode(i, QHeaderView.ResizeMode.ResizeToContents)
+        self.inventory_table.setHorizontalHeaderLabels(["EPC", "ANT", "CNT", "RSSI", "Freq"])
+        self._configure_inventory_columns()
         self.inventory_table.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         
         inv_layout.addWidget(self.inventory_table, 1)
@@ -480,9 +478,7 @@ class InventoryPage(QWidget):
         self.detected_table = TagTableWidget(self)
         self.detected_table.setColumnCount(5)
         self.detected_table.setHorizontalHeaderLabels(["EPC", "REL1", "REL2", "REL&", "DIR"])
-        self.detected_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
-        for i in range(1, 5):
-            self.detected_table.horizontalHeader().setSectionResizeMode(i, QHeaderView.ResizeMode.ResizeToContents)
+        self._configure_detected_columns()
         self.detected_table.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         
         det_layout.addWidget(self.detected_table, 1)
@@ -495,6 +491,38 @@ class InventoryPage(QWidget):
         self.stop_btn.clicked.connect(self._on_stop)
         self.clear_btn.clicked.connect(self._on_clear)
         self.export_btn.clicked.connect(self.export_data.emit)
+
+    def _configure_inventory_columns(self):
+        """Fix column sizing for inventory table."""
+        header = self.inventory_table.horizontalHeader()
+        # All columns fixed width - no stretching
+        fixed_widths = {
+            0: 250,  # EPC: fixed width
+            1: 50,   # ANT: 1 char
+            2: 45,   # CNT: 2-3 chars
+            3: 45,   # RSSI: 2-3 chars
+            4: 40,   # Frequency: narrow fit for "921.00"
+        }
+        for col, width in fixed_widths.items():
+            header.setSectionResizeMode(col, QHeaderView.ResizeMode.Fixed)
+            header.resizeSection(col, width)
+        header.setMinimumSectionSize(24)
+
+    def _configure_detected_columns(self):
+        """Fix column sizing for detected table."""
+        header = self.detected_table.horizontalHeader()
+        # All columns fixed width - no stretching
+        fixed_widths = {
+            0: 220,  # EPC: fixed width
+            1: 52,   # REL1: 4 chars
+            2: 52,   # REL2: 4 chars
+            3: 52,   # REL&: 4 chars
+            4: 32,   # DIR: 2 chars
+        }
+        for col, width in fixed_widths.items():
+            header.setSectionResizeMode(col, QHeaderView.ResizeMode.Fixed)
+            header.resizeSection(col, width)
+        header.setMinimumSectionSize(24)
     
     def _on_start(self):
         """Handle start button click"""
@@ -648,7 +676,8 @@ class InventoryPage(QWidget):
                 self.detected_table.setItem(row, 1, QTableWidgetItem(f"{tag.confidence_ant1:.1f}"))
                 self.detected_table.setItem(row, 2, QTableWidgetItem(f"{tag.confidence_ant2:.1f}"))
                 self.detected_table.setItem(row, 3, QTableWidgetItem(f"{tag.confidence_all:.1f}"))
-                self.detected_table.setItem(row, 4, QTableWidgetItem(tag.direction.name))
+                dir_str = 'X' if tag.direction == tag.direction.__class__.X else tag.direction.name
+                self.detected_table.setItem(row, 4, QTableWidgetItem(dir_str))
             else:  # dict
                 self.detected_table.setItem(row, 0, QTableWidgetItem(tag.get('epc', '')))
                 self.detected_table.setItem(row, 1, QTableWidgetItem(str(tag.get('rel1', ''))))
